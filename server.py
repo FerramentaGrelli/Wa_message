@@ -114,7 +114,7 @@ def shopify_webhook_fulfilled():
     # Messaggio di ordine evaso
     send_whatsapp_message(
         to=customer_phone,
-        content_sid='HX76a884b0a9b5426891612e2ad17b2e09',  # SID del template per "not_partenza"
+        content_sid='HX392e854b4a15afa18abe75359568a7e7',  # SID del template per "not_partenza"
         content_variables={
             '1': customer_name,  # Nome del cliente
             '2': order_id        # ID ordine
