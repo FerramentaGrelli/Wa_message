@@ -160,44 +160,6 @@ def shopify_webhook_shipping():
     send_whatsapp_message(customer_phone, 'HXb121236c140447b2c01c7625d2503558', variables)
     return jsonify({"status": "success"}), 200
 
-# Endpoint per Ordini rimborsati
-@app.route('/webhook_refund', methods=['POST'])
-def shopify_webhook_refund():
-    data = request.get_json()
-    print("Dati ordine rimborsato:", data)
-
-    # Estrai informazioni dall'ordine
-    customer_phone = extract_phone(data.get('billing_address', {}).get('phone') or data.get('customer', {}).get('default_address', {}).get('phone'))
-    order_id = data.get('name')
-    customer_name = data.get('billing_address', {}).get('first_name') or data.get('customer', {}).get('default_address', {}).get('first_name')
-
-    # Estrai il metodo di pagamento
-    payment_method = data.get('transactions', [{}])[0].get('gateway', 'Non specificato')
-    
-    # Estrai il totale del rimborso dalla sezione delle transazioni
-    total_refund = data.get('transactions', [{}])[0].get('amount', '0.00')
-    # Debug: Stampa i dati estratti
-    print("Telefono cliente:", customer_phone)
-    print("ID ordine:", order_id)
-    print("Nome cliente:", customer_name)
-    print("Metodo di pagamento:", payment_method)
-    print("Totale rimborso:", total_refund)
-    
-    if not customer_phone or not customer_name or not order_id:
-        return jsonify({"status": "error", "message": "Dati mancanti."}), 400
-
-    send_whatsapp_message(
-        to=customer_phone,
-        content_sid='HX3eaece9adcab7f17a7f9341813528219',  # SID del template per "prova"
-        content_variables={
-            '1': customer_name,  # Nome del cliente
-            '2': order_id,       # ID ordine
-            '3': total_refund     # Rimborso totale
-        }
-    )
-    
-    return jsonify({"status": "success"}), 200
-
 # Avvio del server Flask
 if __name__ == '__main__':
     app.run(port=5000, debug=True)
