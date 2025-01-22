@@ -16,6 +16,10 @@ twilio_whatsapp_number = os.getenv('TWILIO_WHATSAPP_NUMBER', 'whatsapp:+39389689
 
 twilio_client = Client(account_sid, auth_token)
 
+@app.route('/', methods=['GET'])
+def health_check():
+    return jsonify({"message": "Il server è attivo e funzionante!"}), 200
+
 def send_whatsapp_message(to, template_sid, variables):
     """
     Funzione per inviare un messaggio WhatsApp tramite Twilio
