@@ -18,7 +18,7 @@ twilio_client = Client(account_sid, auth_token)
 
 @app.route('/', methods=['GET'])
 def health_check():
-    return jsonify({"message": "Il server è attivo e funzionante!"}), 200
+    return jsonify({"message": "Il server e' attivo e funzionante! n'te gasa?"}), 200
 
 def extract_phone(phone):
     """Rimuove il prefisso internazionale +39, se presente."""
@@ -39,6 +39,11 @@ def send_whatsapp_message(to, content_sid, content_variables):
         print(f"Messaggio inviato con successo! SID: {message.sid}")
     except Exception as e:
         print(f"Errore nell'invio del messaggio: {e}")
+        print("Dettagli:")
+        print(f"From: {twilio_whatsapp_number}")
+        print(f"To: whatsapp:{customer_phone}")
+        print(f"Template SID: HXb633ef22cc3dc5bfa7737a023018187b")
+        print(f"Variabili: {json.dumps({'1': customer_name, '2': order_id})}")
 
 # Endpoint per Ordini creati
 @app.route('/webhook', methods=['POST'])
