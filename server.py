@@ -29,7 +29,7 @@ def send_whatsapp_message(to, content_sid, content_variables):
     """Invia un messaggio WhatsApp usando un template Twilio."""
     try:
         message = twilio_client.messages.create(
-            from_=twilio_whatsapp_number,
+            from_=f'twilio_whatsapp_number,
             to=f'whatsapp:+39{to}',
             body=None,
             content_sid=content_sid,
