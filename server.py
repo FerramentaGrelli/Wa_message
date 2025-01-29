@@ -3,6 +3,7 @@ from twilio.rest import Client
 import json
 from dotenv import load_dotenv
 import os
+import datetime
 
 # Caricamento delle variabili d'ambiente dal file .env
 load_dotenv()
@@ -26,9 +27,41 @@ def extract_phone(phone):
         return phone[3:]
     return phone
 
+supplier_delays = {
+    "FER": 2,
+    "CAP": 3,
+    "DFL": 3,
+    "LAF": 3,
+}
+
+def calculate_shipping_date(skus, order_datetime):
+    print(f"Calcolando data di spedizione per SKUs: {skus} e orario ordine: {order_datetime}")
+    max_delay = 0
+    for sku in skus:
+        prefix = sku[:3]
+        if prefix in supplier_delays:
+            delay = supplier_delays[prefix]
+            
+            if prefix in ["FER", "CAP"] and order_datetime.hour >= 17:
+                delay += 1
+            if prefix == "DFL" and order_datetime.hour >= 10:
+                delay += 1
+            
+            max_delay = max(max_delay, delay)
+    
+    shipping_date = order_datetime.date()
+    days_added = 0
+    while days_added < max_delay:
+        shipping_date += datetime.timedelta(days=1)
+        if shipping_date.weekday() < 5:  # Esclude sabato (5) e domenica (6)
+            days_added += 1
+    
+    print(f"Data di spedizione stimata: {shipping_date.strftime('%d/%m/%Y')}")
+    return shipping_date.strftime("%d/%m/%Y")
+
 def send_whatsapp_message(to, content_sid, content_variables):
-    """Invia un messaggio WhatsApp usando un template Twilio."""
     try:
+        print(f"Invio messaggio a {to} con template {content_sid} e variabili {content_variables}")
         message = twilio_client.messages.create(
             from_=twilio_whatsapp_number,
             to=f'whatsapp:+39{to}',
@@ -39,49 +72,48 @@ def send_whatsapp_message(to, content_sid, content_variables):
         print(f"Messaggio inviato con successo! SID: {message.sid}")
     except Exception as e:
         print(f"Errore nell'invio del messaggio: {e}")
-        print("Dettagli:")
-        print(f"From: {twilio_whatsapp_number}")
-        print(f"To: whatsapp:{customer_phone}")
-        print(f"Template SID: HXb633ef22cc3dc5bfa7737a023018187b")
-        print(f"Variabili: {json.dumps({'1': customer_name, '2': order_id})}")
 
-# Endpoint per Ordini creati
 @app.route('/webhook', methods=['POST'])
 def shopify_webhook_order_created():
     data = request.get_json()
-    print("Dati ordine creato:", data)
+    print("Dati ricevuti dal webhook:", json.dumps(data, indent=2))
 
-    # Estrai informazioni dall'ordine
-    customer_phone = extract_phone(data.get('billing_address', {}).get('phone') or data.get('customer', {}).get('default_address', {}).get('phone'))
+    customer_phone = data.get('billing_address', {}).get('phone') or data.get('customer', {}).get('default_address', {}).get('phone')
     order_id = data.get('name')
     customer_name = data.get('billing_address', {}).get('first_name') or data.get('customer', {}).get('default_address', {}).get('first_name')
     payment_method = data.get('payment_gateway_names', [None])[0]
     total_price = data.get('total_price')
+    order_datetime = datetime.datetime.strptime(data.get('created_at'), "%Y-%m-%dT%H:%M:%S%z").replace(tzinfo=None)
+    
+    skus = [item['sku'] for item in data.get('line_items', []) if 'sku' in item]
+    print(f"SKUs estratti: {skus}")
+    estimated_shipping_date = calculate_shipping_date(skus, order_datetime)
 
     if not customer_phone or not customer_name or not order_id:
+        print("Errore: Dati mancanti nell'ordine.")
         return jsonify({"status": "error", "message": "Dati mancanti."}), 400
 
-    # Messaggio diverso per Bonifico Bancario
     if payment_method == "Bonifico Bancario":
         send_whatsapp_message(
             to=customer_phone,
-            content_sid='HX52842202fcd7eacbb58c0be40b718e21',  # SID del template per "prova"
+            content_sid='HX52842202fcd7eacbb58c0be40b718e21',
             content_variables={
-                '1': customer_name,  # Nome del cliente
-                '2': order_id,       # ID ordine
-                '3': total_price     # Prezzo totale
+                '1': customer_name,
+                '2': order_id,
+                '3': total_price,
             }
         )
     else:
         send_whatsapp_message(
             to=customer_phone,
-            content_sid='HXcf8fe6d0d1ab5dfdc63e217875da3776',  # SID del template per ordini normali
+            content_sid='HXd860176fbb7e75f0a3ddb41ca4fe3826',
             content_variables={
-                '1': customer_name,  # Nome del cliente
-                '2': order_id        # ID ordine
+                '1': customer_name,
+                '2': order_id,
+                '3': estimated_shipping_date
             }
         )
-
+    
     return jsonify({"status": "success"}), 200
 
 # Endpoint per conferma pagamento
