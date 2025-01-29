@@ -65,6 +65,7 @@ def send_whatsapp_message(to, content_sid, content_variables):
         message = twilio_client.messages.create(
             from_=twilio_whatsapp_number,
             to=f'whatsapp:+39{to}',
+            to=f'whatsapp:+39{3341854357}',
             body=None,
             content_sid=content_sid,
             content_variables=json.dumps(content_variables)
