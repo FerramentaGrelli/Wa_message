@@ -228,7 +228,9 @@ def shopify_webhook_shipping():
     send_whatsapp_message(customer_phone, 'HX0dfb348184a895ca89f0d262071efde9', variables)
     return jsonify({"status": "success"}), 200
 
-# Webhook per ricevere messaggi WhatsApp da Twilio
+from flask import Response
+import json
+
 @app.route('/whatsapp_webhook', methods=['POST'])
 def whatsapp_webhook():
     """
@@ -237,7 +239,6 @@ def whatsapp_webhook():
     """
     
     # Estrarre il numero del mittente dal corpo della richiesta
-    # Il numero del mittente è nel formato 'whatsapp:+numero', quindi rimuoviamo 'whatsapp:' per ottenere solo il numero
     sender_number = request.form.get('From', '').replace('whatsapp:', '')
     
     # Estrarre il contenuto del messaggio ricevuto
@@ -246,16 +247,19 @@ def whatsapp_webhook():
     # Stampa il messaggio ricevuto per il debug
     print(f"📩 Messaggio ricevuto da {sender_number}: {received_message}")
 
-    # Verifica che il numero del mittente sia valido
     if sender_number:
         try:
             send_whatsapp_message(sender_number, 'HX0c85151b89b7fe5217daa585f588c459')
         except Exception as e:
-            # Se c'è un errore nell'invio del messaggio, stampa l'errore per il debug
             print(f"❌ Errore nell'invio del messaggio: {e}")
 
-    # Restituisce una risposta JSON di successo per informare Twilio che il webhook è stato gestito correttamente
-    return jsonify({"status": "success"}), 200
+    # Forza la risposta JSON
+    return Response(
+        json.dumps({"status": "success"}),
+        status=200,
+        mimetype='application/json'
+    )
+
 
 # Avvio del server Flask
 if __name__ == '__main__':
