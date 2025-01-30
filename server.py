@@ -195,7 +195,7 @@ def shopify_webhook_shipping():
         '3': tracking_company,
         '4': tracking_number
     }
-    send_whatsapp_message(customer_phone, 'HXb121236c140447b2c01c7625d2503558', variables)
+    send_whatsapp_message(customer_phone, 'HX0dfb348184a895ca89f0d262071efde9', variables)
     return jsonify({"status": "success"}), 200
 
 # Endpoint per Ordini rimborsati
