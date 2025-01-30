@@ -96,7 +96,7 @@ def shopify_webhook_order_created():
     if payment_method == "Bonifico Bancario":
         send_whatsapp_message(
             to=customer_phone,
-            content_sid='HX52842202fcd7eacbb58c0be40b718e21',
+            content_sid='HX9996adbb6d2f7ab2cf526af4afb47020',
             content_variables={
                 '1': customer_name,
                 '2': order_id,
