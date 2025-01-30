@@ -31,31 +31,60 @@ supplier_delays = {
     "FER": 2,
     "CAP": 3,
     "DFL": 3,
-    "LAF": 3,
+    "LAF": 2,
+    "KNI": 10,
+    "KET": 10,
+    "ARC": 8,
+    "GRL": 1,
 }
 
 def calculate_shipping_date(skus, order_datetime):
     print(f"Calcolando data di spedizione per SKUs: {skus} e orario ordine: {order_datetime}")
     max_delay = 0
+    laf_order = False  # Flag per identificare se c'è un ordine LAF
+
     for sku in skus:
         prefix = sku[:3]
         if prefix in supplier_delays:
             delay = supplier_delays[prefix]
-            
+
             if prefix in ["FER", "CAP"] and order_datetime.hour >= 17:
                 delay += 1
             if prefix == "DFL" and order_datetime.hour >= 10:
                 delay += 1
             
+            # Controllo speciale per LAF
+            if prefix == "LAF":
+                laf_order = True
+            
             max_delay = max(max_delay, delay)
     
-    shipping_date = order_datetime.date()
-    days_added = 0
-    while days_added < max_delay:
-        shipping_date += datetime.timedelta(days=1)
-        if shipping_date.weekday() < 5:  # Esclude sabato (5) e domenica (6)
-            days_added += 1
-    
+    # Se c'è un ordine LAF, applichiamo la logica specifica
+    if laf_order:
+        order_day = order_datetime.weekday()  # 0 = lunedì, 1 = martedì, ..., 6 = domenica
+        order_time = order_datetime.time()
+
+        if order_day == 0 and order_time <= datetime.time(8, 30):  # Lunedì entro le 08:30
+            shipping_date = order_datetime.date() + datetime.timedelta(days=(2 - order_day))  # Mercoledì
+        elif order_day <= 3 and order_time <= datetime.time(8, 30):  # Fino a giovedì entro le 08:30
+            shipping_date = order_datetime.date() + datetime.timedelta(days=(7 - order_day))  # Lunedì successivo
+        else:
+            # Se non rientra nelle casistiche speciali, usa il ritardo standard
+            shipping_date = order_datetime.date()
+            days_added = 0
+            while days_added < max_delay:
+                shipping_date += datetime.timedelta(days=1)
+                if shipping_date.weekday() < 5:  # Esclude sabato e domenica
+                    days_added += 1
+    else:
+        # Calcolo normale per gli altri fornitori
+        shipping_date = order_datetime.date()
+        days_added = 0
+        while days_added < max_delay:
+            shipping_date += datetime.timedelta(days=1)
+            if shipping_date.weekday() < 5:  # Esclude sabato e domenica
+                days_added += 1
+
     print(f"Data di spedizione stimata: {shipping_date.strftime('%d/%m/%Y')}")
     return shipping_date.strftime("%d/%m/%Y")
 
@@ -226,7 +255,7 @@ def shopify_webhook_refund():
 
     send_whatsapp_message(
         to=customer_phone,
-        content_sid='HX3eaece9adcab7f17a7f9341813528219',  # SID del template per "prova"
+        content_sid='HX9a30bdbea3986058aaf89c64d8616e0f',  # SID del template per "prova"
         content_variables={
             '1': customer_name,  # Nome del cliente
             '2': order_id,       # ID ordine
