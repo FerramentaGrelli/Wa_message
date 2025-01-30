@@ -255,7 +255,7 @@ def whatsapp_webhook():
         try:
             # Invia la risposta automatica
             message = twilio_client.messages.create(
-                from_=TWILIO_WHATSAPP_NUMBER,
+                from_=twilio_whatsapp_number,
                 to=f'whatsapp:{sender_number}',
                 body=AUTO_REPLY_MESSAGE
             )
