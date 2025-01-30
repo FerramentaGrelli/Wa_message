@@ -105,7 +105,7 @@ def send_whatsapp_message(to, content_sid, content_variables):
 @app.route('/webhook', methods=['POST'])
 def shopify_webhook_order_created():
     data = request.get_json()
-    print("Dati ricevuti dal webhook:", json.dumps(data, indent=2))
+    print("Dati ricevuti dal webhook:")
 
     customer_phone = data.get('billing_address', {}).get('phone') or data.get('customer', {}).get('default_address', {}).get('phone')
     order_id = data.get('name')
