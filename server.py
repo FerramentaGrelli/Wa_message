@@ -274,7 +274,7 @@ def whatsapp_webhook():
 
 # Endpoint per ordini evasi correzione
 @app.route('/webhook_ciao', methods=['POST'])
-def shopify_webhook_fulfilled():
+def shopify_webhook_fulfilled_ciao():
     data = request.get_json()
     print("Dati ordine evaso:", data)
 
