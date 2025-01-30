@@ -272,32 +272,6 @@ def whatsapp_webhook():
     # Restituisce una risposta JSON di successo per informare Twilio che il webhook è stato gestito correttamente
     return jsonify({"status": "success"}), 200
 
-# Endpoint per ordini evasi correzione
-@app.route('/webhook_ciao', methods=['POST'])
-def shopify_webhook_fulfilled_ciao():
-    data = request.get_json()
-    print("Dati ordine evaso:", data)
-
-    # Estrai informazioni dall'ordine
-    customer_phone = extract_phone(data.get('billing_address', {}).get('phone') or data.get('customer', {}).get('default_address', {}).get('phone'))
-    order_id = data.get('name')
-    customer_name = data.get('billing_address', {}).get('first_name') or data.get('customer', {}).get('default_address', {}).get('first_name')
-
-    if not customer_phone or not customer_name or not order_id:
-        return jsonify({"status": "error", "message": "Dati mancanti."}), 400
-
-    # Messaggio di ordine evaso
-    send_whatsapp_message(
-        to=customer_phone,
-        content_sid='HX1a2ab00997d7b885aa2b9e287f975fdb',  # SID del template per "not_partenza"
-        content_variables={
-            '1': customer_name,  # Nome del cliente
-            '2': order_id        # ID ordine
-        }
-    )
-
-    return jsonify({"status": "success"}), 200
-
 # Avvio del server Flask
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
