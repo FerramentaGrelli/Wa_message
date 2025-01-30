@@ -106,7 +106,7 @@ def shopify_webhook_order_created():
     else:
         send_whatsapp_message(
             to=customer_phone,
-            content_sid='HX2a67b36c226811c9d9153b0512a16778',
+            content_sid='HX4dc1f54cfdf34308a9397c4462d3a35f',
             content_variables={
                 '1': customer_name,
                 '2': order_id,
