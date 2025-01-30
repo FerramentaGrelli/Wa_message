@@ -15,6 +15,15 @@ account_sid = os.getenv('TWILIO_ACCOUNT_SID')
 auth_token = os.getenv('TWILIO_AUTH_TOKEN')
 twilio_whatsapp_number = os.getenv('TWILIO_WHATSAPP_NUMBER')
 
+AUTO_REPLY_MESSAGE = ("Grazie per averci scritto! Questo numero non è abilitato alla ricezione di messaggi. "
+                      "Per ricevere assistenza, contattaci tramite:\n"
+                      "\n"
+                      "📧 assistenza@grelli.it\n"
+                      "\n"
+                      "📲 +39 3791988758\n"
+                      "\n"
+                      "📞 +39 0758040747")
+
 twilio_client = Client(account_sid, auth_token)
 
 @app.route('/', methods=['GET'])
@@ -227,42 +236,40 @@ def shopify_webhook_shipping():
     send_whatsapp_message(customer_phone, 'HX0dfb348184a895ca89f0d262071efde9', variables)
     return jsonify({"status": "success"}), 200
 
-# Endpoint per Ordini rimborsati
-@app.route('/webhook_refund', methods=['POST'])
-def shopify_webhook_refund():
-    data = request.get_json()
-    print("Dati ordine rimborsato:", data)
-
-    # Estrai informazioni dall'ordine
-    customer_phone = extract_phone(data.get('billing_address', {}).get('phone') or data.get('customer', {}).get('default_address', {}).get('phone'))
-    order_id = data.get('name')
-    customer_name = data.get('billing_address', {}).get('first_name') or data.get('customer', {}).get('default_address', {}).get('first_name')
-
-    # Estrai il metodo di pagamento
-    payment_method = data.get('transactions', [{}])[0].get('gateway', 'Non specificato')
+# Webhook per ricevere messaggi WhatsApp da Twilio
+@app.route('/whatsapp_webhook', methods=['POST'])
+def whatsapp_webhook():
+    """
+    Questa funzione gestisce la richiesta POST inviata da Twilio quando un messaggio WhatsApp viene ricevuto.
+    Analizza il numero del mittente e il corpo del messaggio e invia una risposta automatica.
+    """
     
-    # Estrai il totale del rimborso dalla sezione delle transazioni
-    total_refund = data.get('transactions', [{}])[0].get('amount', '0.00')
-    # Debug: Stampa i dati estratti
-    print("Telefono cliente:", customer_phone)
-    print("ID ordine:", order_id)
-    print("Nome cliente:", customer_name)
-    print("Metodo di pagamento:", payment_method)
-    print("Totale rimborso:", total_refund)
+    # Estrarre il numero del mittente dal corpo della richiesta
+    # Il numero del mittente è nel formato 'whatsapp:+numero', quindi rimuoviamo 'whatsapp:' per ottenere solo il numero
+    sender_number = request.form.get('From', '').replace('whatsapp:', '')
     
-    if not customer_phone or not customer_name or not order_id:
-        return jsonify({"status": "error", "message": "Dati mancanti."}), 400
+    # Estrarre il contenuto del messaggio ricevuto
+    received_message = request.form.get('Body', '')
 
-    send_whatsapp_message(
-        to=customer_phone,
-        content_sid='HX9a30bdbea3986058aaf89c64d8616e0f',  # SID del template per "prova"
-        content_variables={
-            '1': customer_name,  # Nome del cliente
-            '2': order_id,       # ID ordine
-            '3': total_refund     # Rimborso totale
-        }
-    )
-    
+    # Stampa il messaggio ricevuto per il debug
+    print(f"📩 Messaggio ricevuto da {sender_number}: {received_message}")
+
+    # Verifica che il numero del mittente sia valido
+    if sender_number:
+        try:
+            # Invia la risposta automatica al numero del mittente
+            message = twilio_client.messages.create(
+                from_=TWILIO_WHATSAPP_NUMBER,  # Il numero WhatsApp da cui inviare il messaggio
+                to=f'whatsapp:{sender_number}',  # Il numero del mittente a cui inviare la risposta
+                body=AUTO_REPLY_MESSAGE  # Corpo del messaggio da inviare
+            )
+            # Se il messaggio è stato inviato con successo, stampa un messaggio di conferma
+            print(f"✅ Risposta inviata a {sender_number}: {AUTO_REPLY_MESSAGE}")
+        except Exception as e:
+            # Se c'è un errore nell'invio del messaggio, stampa l'errore per il debug
+            print(f"❌ Errore nell'invio del messaggio: {e}")
+
+    # Restituisce una risposta JSON di successo per informare Twilio che il webhook è stato gestito correttamente
     return jsonify({"status": "success"}), 200
 
 # Avvio del server Flask
