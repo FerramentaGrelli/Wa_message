@@ -15,14 +15,6 @@ account_sid = os.getenv('TWILIO_ACCOUNT_SID')
 auth_token = os.getenv('TWILIO_AUTH_TOKEN')
 twilio_whatsapp_number = os.getenv('TWILIO_WHATSAPP_NUMBER')
 
-AUTO_REPLY_MESSAGE = ("Grazie per averci scritto! Questo numero non è abilitato alla ricezione di messaggi. "
-                      "Per ricevere assistenza, contattaci tramite:\n"
-                      "\n"
-                      "📧 assistenza@grelli.it\n"
-                      "\n"
-                      "📲 +39 3791988758\n"
-                      "\n"
-                      "📞 +39 0758040747")
 
 twilio_client = Client(account_sid, auth_token)
 
@@ -257,14 +249,7 @@ def whatsapp_webhook():
     # Verifica che il numero del mittente sia valido
     if sender_number:
         try:
-            # Invia la risposta automatica al numero del mittente
-            message = twilio_client.messages.create(
-                from_=TWILIO_WHATSAPP_NUMBER,  # Il numero WhatsApp da cui inviare il messaggio
-                to=f'whatsapp:{sender_number}',  # Il numero del mittente a cui inviare la risposta
-                body=AUTO_REPLY_MESSAGE  # Corpo del messaggio da inviare
-            )
-            # Se il messaggio è stato inviato con successo, stampa un messaggio di conferma
-            print(f"✅ Risposta inviata a {sender_number}: {AUTO_REPLY_MESSAGE}")
+            send_whatsapp_message(sender_number, 'HX0c85151b89b7fe5217daa585f588c459')
         except Exception as e:
             # Se c'è un errore nell'invio del messaggio, stampa l'errore per il debug
             print(f"❌ Errore nell'invio del messaggio: {e}")
