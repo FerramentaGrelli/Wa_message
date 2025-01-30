@@ -15,6 +15,20 @@ account_sid = os.getenv('TWILIO_ACCOUNT_SID')
 auth_token = os.getenv('TWILIO_AUTH_TOKEN')
 twilio_whatsapp_number = os.getenv('TWILIO_WHATSAPP_NUMBER')
 
+AUTO_REPLY_MESSAGE = ("Grazie per averci scritto!\n"
+                      "Purtroppo questo numero non è abilitato alla ricezione di messaggi e non possiamo leggere quanto ci hai scritto\n"
+                      "\n"
+                      "Per ricevere assistenza, contattaci tramite uno dei seguenti canali:\n"
+                      "\n"
+                      "📧 assistenza@grelli.it\n"
+                      "\n"
+                      "📲 +39 3791988758\n"
+                      "\n"
+                      "📞 +39 0758040747\n"
+                      "\n"
+                      "Grazie mille,\n" 
+                      "\n"
+                      "*Ferramenta Grelli*")
 
 twilio_client = Client(account_sid, auth_token)
 
@@ -228,36 +242,29 @@ def shopify_webhook_shipping():
     send_whatsapp_message(customer_phone, 'HX0dfb348184a895ca89f0d262071efde9', variables)
     return jsonify({"status": "success"}), 200
 
+# 📩 Webhook per ricevere messaggi WhatsApp
 @app.route('/whatsapp_webhook', methods=['POST'])
 def whatsapp_webhook():
-    """
-    Questa funzione gestisce la richiesta POST inviata da Twilio quando un messaggio WhatsApp viene ricevuto.
-    Estrae il numero del mittente e il corpo del messaggio, quindi invia una risposta automatica.
-    """
-    
-    # Estrai il numero del mittente dal corpo della richiesta
+    # Twilio invia i dati in formato application/x-www-form-urlencoded
     sender_number = request.form.get('From', '').replace('whatsapp:', '')
-    
-    # Estrai il contenuto del messaggio ricevuto
     received_message = request.form.get('Body', '')
 
-    # Stampa il messaggio ricevuto per il debug
     print(f"📩 Messaggio ricevuto da {sender_number}: {received_message}")
 
-    # Invia una risposta se il numero del mittente è valido
     if sender_number:
         try:
-            send_whatsapp_message(sender_number, 'HX0c85151b89b7fe5217daa585f588c459')
+            # Invia la risposta automatica
+            message = twilio_client.messages.create(
+                from_=TWILIO_WHATSAPP_NUMBER,
+                to=f'whatsapp:{sender_number}',
+                body=AUTO_REPLY_MESSAGE
+            )
+            print(f"✅ Risposta inviata a {sender_number}: {AUTO_REPLY_MESSAGE}")
         except Exception as e:
             print(f"❌ Errore nell'invio del messaggio: {e}")
 
-    # Restituisce una risposta JSON con il corretto Content-Type
-    return Response(
-        json.dumps({"status": "success"}),
-        status=200,
-        mimetype='application/json'  # Impostiamo il Content-Type correttamente
-    )
-
+    return jsonify({"status": "success"}), 200
+    
 # Avvio del server Flask
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
