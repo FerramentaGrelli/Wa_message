@@ -122,7 +122,7 @@ def shopify_webhook_order_created():
     data = request.get_json()
     print("Dati ricevuti dal webhook:")
 
-    customer_phone = data.get('billing_address', {}).get('phone') or data.get('customer', {}).get('default_address', {}).get('phone')
+    customer_phone = extract_phone(data.get('billing_address', {}).get('phone') or data.get('customer', {}).get('default_address', {}).get('phone'))
     order_id = data.get('name')
     customer_name = data.get('billing_address', {}).get('first_name') or data.get('customer', {}).get('default_address', {}).get('first_name')
     payment_method = data.get('payment_gateway_names', [None])[0]
@@ -132,7 +132,7 @@ def shopify_webhook_order_created():
     skus = [item['sku'] for item in data.get('line_items', []) if 'sku' in item]
     print(f"SKUs estratti: {skus}")
     estimated_shipping_date = calculate_shipping_date(skus, order_datetime)
-
+  
     if not customer_phone or not customer_name or not order_id:
         print("Errore: Dati mancanti nell'ordine.")
         return jsonify({"status": "error", "message": "Dati mancanti."}), 400
