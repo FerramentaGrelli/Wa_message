@@ -132,7 +132,7 @@ def shopify_webhook_order_created():
     customer_name = data.get('billing_address', {}).get('first_name') or data.get('customer', {}).get('default_address', {}).get('first_name')
     payment_method = data.get('payment_gateway_names', [None])[0]
     total_price = data.get('total_price')
-    order_datetime = datetime.datetime.strptime(data.get('created_at'), "%Y-%m-%dT%H:%M:%S%z").replace(tzinfo=None)
+    order_datetime = datetime.strptime(data.get('created_at'), "%Y-%m-%dT%H:%M:%S%z").replace(tzinfo=None)
     
     skus = [item['sku'] for item in data.get('line_items', []) if 'sku' in item]
     print(f"SKUs estratti: {skus}")
