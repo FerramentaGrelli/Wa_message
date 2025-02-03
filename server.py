@@ -45,7 +45,7 @@ def extract_phone(phone):
 supplier_delays = {
     "FER": 2,
     "CAP": 3,
-    "DFL": 3,
+    "DFL": 2,
     "LAF": 2,
     "KNI": 10,
     "KET": 10,
@@ -55,49 +55,54 @@ supplier_delays = {
 
 def calculate_shipping_date(skus, order_datetime):
     print(f"Calcolando data di spedizione per SKUs: {skus} e orario ordine: {order_datetime}")
+
     max_delay = 0
-    laf_order = False  # Flag per identificare se c'è un ordine LAF
+    laf_order = False
+
+    # Se l’ordine arriva tra venerdì dopo le 17 e domenica a mezzanotte, consideriamolo come lunedì mattina
+    if (order_datetime.weekday() == 4 and order_datetime.hour >= 17) or order_datetime.weekday() in [5, 6]:
+        order_datetime = datetime.combine(order_datetime + timedelta(days=(7 - order_datetime.weekday())), time(8, 0))
 
     for sku in skus:
         prefix = sku[:3]
         if prefix in supplier_delays:
             delay = supplier_delays[prefix]
 
+            # Aggiustamenti per orari specifici
             if prefix in ["FER", "CAP"] and order_datetime.hour >= 17:
                 delay += 1
             if prefix == "DFL" and order_datetime.hour >= 10:
                 delay += 1
             
-            # Controllo speciale per LAF
             if prefix == "LAF":
                 laf_order = True
-            
+
             max_delay = max(max_delay, delay)
-    
-    # Se c'è un ordine LAF, applichiamo la logica specifica
+
+    # Se c’è LAF, applichiamo la logica specifica
     if laf_order:
-        order_day = order_datetime.weekday()  # 0 = lunedì, 1 = martedì, ..., 6 = domenica
+        order_day = order_datetime.weekday()
         order_time = order_datetime.time()
 
-        if order_day == 0 and order_time <= datetime.time(8, 30):  # Lunedì entro le 08:30
-            shipping_date = order_datetime.date() + datetime.timedelta(days=(2 - order_day))  # Mercoledì
-        elif order_day <= 3 and order_time <= datetime.time(8, 30):  # Fino a giovedì entro le 08:30
-            shipping_date = order_datetime.date() + datetime.timedelta(days=(7 - order_day))  # Lunedì successivo
+        if order_day == 0 and order_time <= time(8, 30):  # Lunedì entro le 08:30 -> Mercoledì
+            shipping_date = order_datetime.date() + timedelta(days=2)
+        elif order_day <= 3 and order_time <= time(8, 30):  # Martedì-Giovedì entro 08:30 -> Lunedì successivo
+            shipping_date = order_datetime.date() + timedelta(days=(7 - order_day))
         else:
-            # Se non rientra nelle casistiche speciali, usa il ritardo standard
+            # Calcolo normale basato sul massimo ritardo
             shipping_date = order_datetime.date()
             days_added = 0
             while days_added < max_delay:
-                shipping_date += datetime.timedelta(days=1)
-                if shipping_date.weekday() < 5:  # Esclude sabato e domenica
+                shipping_date += timedelta(days=1)
+                if shipping_date.weekday() < 5:
                     days_added += 1
     else:
         # Calcolo normale per gli altri fornitori
         shipping_date = order_datetime.date()
         days_added = 0
         while days_added < max_delay:
-            shipping_date += datetime.timedelta(days=1)
-            if shipping_date.weekday() < 5:  # Esclude sabato e domenica
+            shipping_date += timedelta(days=1)
+            if shipping_date.weekday() < 5:
                 days_added += 1
 
     print(f"Data di spedizione stimata: {shipping_date.strftime('%d/%m/%Y')}")
