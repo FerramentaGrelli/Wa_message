@@ -80,7 +80,7 @@ def calculate_shipping_date(skus, order_datetime):
             max_delay = max(max_delay, delay)
 
     # Se c’è LAF, applichiamo la logica specifica
-  if laf_order:
+    if laf_order:
       order_day = order_datetime.weekday()
       order_time = order_datetime.time()
 
