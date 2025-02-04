@@ -80,22 +80,19 @@ def calculate_shipping_date(skus, order_datetime):
             max_delay = max(max_delay, delay)
 
     # Se c’è LAF, applichiamo la logica specifica
-    if laf_order:
-        order_day = order_datetime.weekday()
-        order_time = order_datetime.time()
+  if laf_order:
+      order_day = order_datetime.weekday()
+      order_time = order_datetime.time()
 
-        if order_day == 0 and order_time <= time(8, 30):  # Lunedì entro le 08:30 -> Mercoledì
-            shipping_date = order_datetime.date() + timedelta(days=2)
-        elif order_day <= 3 and order_time <= time(8, 30):  # Martedì-Giovedì entro 08:30 -> Lunedì successivo
-            shipping_date = order_datetime.date() + timedelta(days=(7 - order_day))
-        else:
-            # Calcolo normale basato sul massimo ritardo
-            shipping_date = order_datetime.date()
-            days_added = 0
-            while days_added < max_delay:
-                shipping_date += timedelta(days=1)
-                if shipping_date.weekday() < 5:
-                    days_added += 1
+      # Lunedì dalle 08:30 fino a giovedì 08:30 -> Spedizione entro il lunedì successivo
+      if order_day == 0 and order_time >= time(8, 30):  # Lunedì dopo le 08:30
+          shipping_date = order_datetime.date() + timedelta(days=(7 - order_day))  # Lunedi successivo
+      elif order_day <= 3 and order_time <= time(8, 30):  # Martedì-Giovedì prima delle 08:30
+          shipping_date = order_datetime.date() + timedelta(days=(7 - order_day))  # Lunedi successivo
+      else:
+          # Per gli altri ordini, spedizione entro il mercoledì della settimana successiva
+          shipping_date = order_datetime.date() + timedelta(days=(7 - order_day + 2))  # Mercoledì della settimana dopo
+
     else:
         # Calcolo normale per gli altri fornitori
         shipping_date = order_datetime.date()
