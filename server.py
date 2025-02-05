@@ -87,7 +87,9 @@ def calculate_shipping_date(skus, order_datetime):
       # Lunedì dalle 08:30 fino a giovedì 08:30 -> Spedizione entro il lunedì successivo
       if order_day == 0 and order_time >= time(8, 30):  # Lunedì dopo le 08:30
           shipping_date = order_datetime.date() + timedelta(days=(7 - order_day))  # Lunedi successivo
-      elif order_day <= 3 and order_time <= time(8, 30):  # Martedì-Giovedì prima delle 08:30
+      elif order_day < 3:  # Martedì-Giovedì
+          shipping_date = order_datetime.date() + timedelta(days=(7 - order_day))  # Lunedi successivo
+      elif order_day == 3 and order_time <= time(8, 30):  # Martedì-Giovedì prima delle 08:30
           shipping_date = order_datetime.date() + timedelta(days=(7 - order_day))  # Lunedi successivo
       else:
           # Per gli altri ordini, spedizione entro il mercoledì della settimana successiva
