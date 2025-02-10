@@ -32,16 +32,22 @@ AUTO_REPLY_MESSAGE = ("Grazie per averci scritto!\n"
 
 twilio_client = Client(account_sid, auth_token)
 
+#---------------------------------------------------------------------------------------------
+#Controlla che il server sia attivo
 @app.route('/', methods=['GET'])
 def health_check():
     return jsonify({"message": "Il server e' attivo e funzionante! n'te gasa?"}), 200
 
+#-------------------------------------------------------------------------------------------------
+#Estrae il numero di telefono e toglie il prefisso qualora ci sia
 def extract_phone(phone):
     """Rimuove il prefisso internazionale +39, se presente."""
     if phone and phone.startswith('+39'):
         return phone[3:]
     return phone
 
+#-------------------------------------------------------------------
+#Giorni di consegna dei fornitori
 supplier_delays = {
     "FER": 2,
     "CAP": 3,
@@ -53,6 +59,8 @@ supplier_delays = {
     "GRL": 1,
 }
 
+#-----------------------------------------------------------------------------------------------------------
+#Funzione che calcola la data di consegna del prodotto
 def calculate_shipping_date(skus, order_datetime):
     print(f"Calcolando data di spedizione per SKUs: {skus} e orario ordine: {order_datetime}")
 
@@ -106,7 +114,9 @@ def calculate_shipping_date(skus, order_datetime):
 
     print(f"Data di spedizione stimata: {shipping_date.strftime('%d/%m/%Y')}")
     return shipping_date.strftime("%d/%m/%Y")
-
+  
+#-------------------------------------------------------------------------------------------------
+#Invio dei messaggi
 def send_whatsapp_message(to, content_sid, content_variables):
     try:
         print(f"Invio messaggio a {to} con template {content_sid} e variabili {content_variables}")
@@ -218,6 +228,7 @@ def shopify_webhook_fulfilled():
 
     return jsonify({"status": "success"}), 200
 
+#-----------------------------------------------------------------------------------------------------------------------------------
 # Endpoint per aggiornamento spedizione
 @app.route('/webhook_shipping', methods=['POST'])
 def shopify_webhook_shipping():
@@ -248,14 +259,15 @@ def shopify_webhook_shipping():
     send_whatsapp_message(customer_phone, 'HX0dfb348184a895ca89f0d262071efde9', variables)
     return jsonify({"status": "success"}), 200
 
-# 📩 Webhook per ricevere messaggi WhatsApp
+#--------------------------------------------------------------------------------------------------------------------
+# Webhook per ricevere messaggi WhatsApp
 @app.route('/whatsapp_webhook', methods=['POST'])
 def whatsapp_webhook():
     # Twilio invia i dati in formato application/x-www-form-urlencoded
     sender_number = request.form.get('From', '').replace('whatsapp:', '')
     received_message = request.form.get('Body', '')
 
-    print(f"📩 Messaggio ricevuto da {sender_number}: {received_message}")
+    print(f" Messaggio ricevuto da {sender_number}: {received_message}")
 
     if sender_number:
         try:
@@ -265,12 +277,13 @@ def whatsapp_webhook():
                 to=f'whatsapp:{sender_number}',
                 body=AUTO_REPLY_MESSAGE
             )
-            print(f"✅ Risposta inviata a {sender_number}: {AUTO_REPLY_MESSAGE}")
+            print(f" Risposta inviata a {sender_number}: {AUTO_REPLY_MESSAGE}")
         except Exception as e:
-            print(f"❌ Errore nell'invio del messaggio: {e}")
+            print(f" Errore nell'invio del messaggio: {e}")
 
     return jsonify({"status": "success"}), 200
-    
+
+#--------------------------------------------------------------------------------------------------
 # Avvio del server Flask
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
