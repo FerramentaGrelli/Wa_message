@@ -121,6 +121,8 @@ def send_whatsapp_message(to, content_sid, content_variables):
     except Exception as e:
         print(f"Errore nell'invio del messaggio: {e}")
 
+#----------------------------------------------------------------------------------------------------------------------------#
+#Endpoint per ordine creato con bonifico
 @app.route('/webhook', methods=['POST'])
 def shopify_webhook_order_created():
     data = request.get_json()
@@ -151,45 +153,45 @@ def shopify_webhook_order_created():
                 '3': total_price,
             }
         )
-    else:
-        send_whatsapp_message(
-            to=customer_phone,
-            content_sid='HX4dc1f54cfdf34308a9397c4462d3a35f',
-            content_variables={
-                '1': customer_name,
-                '2': order_id,
-                '3': estimated_shipping_date
-            }
-        )
     
     return jsonify({"status": "success"}), 200
 
+#----------------------------------------------------------------------------------------------------------------------------#
 # Endpoint per conferma pagamento
 @app.route('/webhook_payment_confirmed', methods=['POST'])
 def shopify_webhook_payment_confirmed():
-    data = request.get_json()
-    print("Dati pagamento confermato:", data)
+    ddata = request.get_json()
+    print("Dati ricevuti dal webhook:")
 
-    # Estrai informazioni dall'ordine
     customer_phone = extract_phone(data.get('billing_address', {}).get('phone') or data.get('customer', {}).get('default_address', {}).get('phone'))
     order_id = data.get('name')
     customer_name = data.get('billing_address', {}).get('first_name') or data.get('customer', {}).get('default_address', {}).get('first_name')
-
+    payment_method = data.get('payment_gateway_names', [None])[0]
+    total_price = data.get('total_price')
+    order_datetime = datetime.strptime(data.get('created_at'), "%Y-%m-%dT%H:%M:%S%z").replace(tzinfo=None)
+    
+    skus = [item['sku'] for item in data.get('line_items', []) if 'sku' in item]
+    print(f"SKUs estratti: {skus}")
+    estimated_shipping_date = calculate_shipping_date(skus, order_datetime)
+  
     if not customer_phone or not customer_name or not order_id:
+        print("Errore: Dati mancanti nell'ordine.")
         return jsonify({"status": "error", "message": "Dati mancanti."}), 400
 
     # Messaggio di conferma pagamento
     send_whatsapp_message(
         to=customer_phone,
-        content_sid='HXcf8fe6d0d1ab5dfdc63e217875da3776',  # SID del template per conferma pagamento
+        content_sid='HX4dc1f54cfdf34308a9397c4462d3a35f',  # SID del template per conferma pagamento
         content_variables={
             '1': customer_name,  # Nome del cliente
             '2': order_id        # ID ordine
+            '3': estimated_shipping_date
         }
     )
 
     return jsonify({"status": "success"}), 200
 
+#----------------------------------------------------------------------------------------------------------------------------#
 # Endpoint per ordini evasi
 @app.route('/webhook_fulfilled', methods=['POST'])
 def shopify_webhook_fulfilled():
