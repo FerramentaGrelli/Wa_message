@@ -160,7 +160,7 @@ def shopify_webhook_order_created():
 # Endpoint per conferma pagamento
 @app.route('/webhook_payment_confirmed', methods=['POST'])
 def shopify_webhook_payment_confirmed():
-    ddata = request.get_json()
+    data = request.get_json()
     print("Dati ricevuti dal webhook:")
 
     customer_phone = extract_phone(data.get('billing_address', {}).get('phone') or data.get('customer', {}).get('default_address', {}).get('phone'))
