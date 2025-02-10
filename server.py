@@ -184,8 +184,8 @@ def shopify_webhook_payment_confirmed():
         content_sid='HX4dc1f54cfdf34308a9397c4462d3a35f',  # SID del template per conferma pagamento
         content_variables={
             '1': customer_name,  # Nome del cliente
-            '2': order_id        # ID ordine
-            '3': estimated_shipping_date
+            '2': order_id,        # ID ordine
+            '3': estimated_shipping_date,
         }
     )
 
